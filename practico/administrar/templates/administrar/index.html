@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda de Contactos</title>
+    <!-- Vinculamos tu archivo CSS propio y separado -->
+    <link rel="stylesheet" href="{% static 'administrar/estilos.css' %}">
+</head>
+<body>
+    <div class="contenedor-principal">
+        
+        <!-- 1. BARRA DE BÚSQUEDA (Arriba de todo) -->
+        <div class="tarjeta">
+            <div class="tarjeta-cuerpo">
+                <label for="buscarContacto" style="font-weight: bold; color: #495057; display:block; margin-bottom:0.5rem;">Buscar contactos en tiempo real</label>
+                <input type="text" id="buscarContacto" class="input-busqueda" placeholder="Escribe un nombre para buscar... (ej. ju)">
+            </div>
+        </div>
+
+        <!-- 2. FORMULARIO DE REGISTRO -->
+        <!-- 2. FORMULARIO DE REGISTRO / EDICIÓN -->
+        <div class="tarjeta">
+            <div class="tarjeta-encabezado">
+                <h4>{% if editando %}Editar Contacto{% else %}Registrar Nuevo Contacto{% endif %}</h4>
+            </div>
+            <div class="tarjeta-cuerpo">
+                
+                <!-- Si el formulario en general tiene errores no asociados a un campo específico -->
+                {% if form.non_field_errors %}
+                    <div class="error-mensaje">
+                        {{ form.non_field_errors.0 }}
+                    </div>
+                {% endif %}
+
+                <form method="POST" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="grupo-control">
+                        <label>Nombre Completo</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                            <span class="error-mensaje">{{ form.nombre.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="grupo-control">
+                        <label>Correo Electrónico</label>
+                        {{ form.correo }}
+                        {% if form.correo.errors %}
+                            <span class="error-mensaje">{{ form.correo.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="grupo-control">
+                        <label>Teléfono</label>
+                        {{ form.telefono }}
+                        {% if form.telefono.errors %}
+                            <span class="error-mensaje">{{ form.telefono.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="btn-guardar">
+                        {% if editando %}Actualizar Contacto{% else %}Guardar{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 3. LISTA DE CONTACTOS -->
+        <div>
+            <h3 class="lista-titulo">Lista de Contactos</h3>
+            
+            <!-- Contenedor clave para el AJAX -->
+            <div id="contenedor-contactos">
+                {% include 'administrar/contactos_list.html' %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script de búsqueda en tiempo real independiente -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const inputBuscar = document.getElementById('buscarContacto');
+            const contenedor = document.getElementById('contenedor-contactos');
+
+            if (inputBuscar) {
+                inputBuscar.addEventListener('input', function(e) {
+                    const valor = e.target.value;
+
+                    // Petición asíncrona nativa a Django
+                    fetch(`/?q=${encodeURIComponent(valor)}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        if (contenedor) {
+                            contenedor.innerHTML = html;
+                        }
+                    })
+                    .catch(error => console.error('Error en la búsqueda:', error));
+                });
+            }
+        });
+    </script>
+</body>
+</html>
